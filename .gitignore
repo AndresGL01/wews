@@ -1,0 +1,9 @@
+.idea
+
+### Environment Secrets ###
+credentials.json
+.env
+
+### Drive Token ###
+
+wews/token.json
