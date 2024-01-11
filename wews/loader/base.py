@@ -6,9 +6,8 @@ from dotenv import load_dotenv
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 
 load_dotenv()
 
@@ -24,6 +23,14 @@ class Client(ABC):
 
     @abc.abstractmethod
     def push_new_version(self) -> bool:
+        """
+        Tag and push a new version of the ETL process to the loading platform
+        :return:
+        """
+        pass
+
+    @abc.abstractmethod
+    def push_bronze_data(self, path: str, parent_id: str, filename: str) -> None:
         """
         Tag and push a new version of the ETL process to the loading platform
         :return:
@@ -80,3 +87,8 @@ class Drive(Client):
         done = False
         while done is False:
             status, done = downloader.next_chunk()
+
+    def push_bronze_data(self, path: str, parent_id: str, filename: str) -> None:
+        file_metadata = {'name': filename, "parents": [parent_id]}
+        media = MediaFileUpload(path, mimetype="application/parquet")
+        self.service.files().create(body=file_metadata, media_body=media, fields="id").execute()

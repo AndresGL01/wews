@@ -3,12 +3,12 @@ import os
 from dotenv import load_dotenv
 
 from google.oauth2 import service_account
-
-
+import polars as pl
 
 from wews.extractor.base import source_to_dataframe
 from wews.loader.base import Drive
-import polars as pl
+
+from datetime import datetime
 
 load_dotenv()
 
@@ -20,7 +20,6 @@ if __name__ == '__main__':
     credentials = service_account.Credentials.from_service_account_file(
         SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 
-
     drive = Drive(credentials=credentials)
     static_data = drive.retrieve_static_data()
     dataframes = []
@@ -28,3 +27,9 @@ if __name__ == '__main__':
         drive.get_resource(file.get('id'), file.get('name'))
         df = source_to_dataframe(f"{os.getenv('TEMPORAL_STATIC_DATA_PATH')}{file.get('name')}")
         dataframes.append(df)
+    mix = pl.concat(dataframes, how="diagonal")
+    filename = f'{datetime.now().strftime("%Y_%m_%d")}.parquet'
+    target_path = f'{os.getenv("TEMPORAL_STATIC_DATA_PATH")}{filename}'
+    mix.write_parquet(target_path)
+
+    drive.push_bronze_data(target_path, os.getenv('WAREHOUSE_BRONZE_FOLDER_ID'), filename)
