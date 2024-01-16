@@ -2,6 +2,8 @@ import abc
 import os
 import io
 from abc import ABC
+from typing import Any
+
 from dotenv import load_dotenv
 
 from google.auth.transport.requests import Request
@@ -22,7 +24,7 @@ class Client(ABC):
         pass
 
     @abc.abstractmethod
-    def push_new_version(self) -> bool:
+    def push_file(self, path_to_file: str, save_into: str, filename_str) -> bool:
         """
         Tag and push a new version of the ETL process to the loading platform
         :return:
@@ -30,11 +32,7 @@ class Client(ABC):
         pass
 
     @abc.abstractmethod
-    def push_bronze_data(self, path: str, parent_id: str, filename: str) -> None:
-        """
-        Tag and push a new version of the ETL process to the loading platform
-        :return:
-        """
+    def get_resource(self, resource_id: str, resource_name: str):
         pass
 
 
@@ -71,9 +69,6 @@ class Drive(Client):
                 items = results.get('files')
         return items
 
-    def push_new_version(self) -> bool:
-        pass
-
     def get_resource(self, resource_id: str, resource_name: str):
         """
         Download the resource to the local storage to be analyzed
@@ -88,7 +83,12 @@ class Drive(Client):
         while done is False:
             status, done = downloader.next_chunk()
 
-    def push_bronze_data(self, path: str, parent_id: str, filename: str) -> None:
+    def push_file(self, path: str, parent_id: str, filename: str) -> None:
         file_metadata = {'name': filename, "parents": [parent_id]}
         media = MediaFileUpload(path, mimetype="application/parquet")
         self.service.files().create(body=file_metadata, media_body=media, fields="id").execute()
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            "service": self.service,
+        }
