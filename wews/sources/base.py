@@ -26,9 +26,6 @@ class UrlHaus(Source):
 
 class Kaggle(Source):
     def get(self, **kwargs) -> pl.DataFrame:
-        """
-        Receive the authenticated drive client to retrieve the static data
-        """
         file_spec: dict = kwargs.get('file_spec')
 
         return pl.read_csv(f"{os.getenv('TEMPORAL_STATIC_DATA_PATH')}{file_spec.get('name')}")

@@ -35,6 +35,13 @@ class Client(ABC):
     def get_resource(self, resource_id: str, resource_name: str):
         pass
 
+    @abc.abstractmethod
+    def create_folder(self, folder_name) -> str:
+        """
+        Create a new folder at cloud service and return the folder id
+        """
+        pass
+
 
 class Drive(Client):
     def __init__(self, credentials: Credentials) -> None:
@@ -88,7 +95,10 @@ class Drive(Client):
         media = MediaFileUpload(path, mimetype="application/parquet")
         self.service.files().create(body=file_metadata, media_body=media, fields="id").execute()
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "service": self.service,
+    def create_folder(self, folder_name) -> str:
+        file_metadata = {
+            "name": folder_name,
+            "parents": [os.getenv('WAREHOUSE_GOLD_FOLDER_ID')],
+            "mimeType": "application/vnd.google-apps.folder",
         }
+        return self.service.files().create(body=file_metadata, fields="id").execute().get('id')
